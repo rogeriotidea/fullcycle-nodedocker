@@ -1,0 +1,51 @@
+version: "3"
+
+services:
+  appnode:
+    build:
+      context: ./node
+    container_name: appnode
+    entrypoint: dockerize -wait tcp://mysqldb:3306 -timeout 30s node index.js
+    networks:
+      - node-network
+    tty: true
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mysqldb
+
+  mysqldb:
+    image: mysql:5.7
+    command: --init-file /data/application/init.sql
+    container_name: mysqldb
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./init.sql:/data/application/init.sql
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=nodedb
+      - MYSQL_PASSWORD=nodedb
+    networks:
+      - node-network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nodenginx
+    restart: unless-stopped
+    depends_on:
+      - appnode
+    volumes:
+      - ./nginx/web-root:/var/www/html
+    networks:
+      - node-network
+    ports:
+      - "80:80"
+
+networks:
+  node-network:
+    driver: bridge
