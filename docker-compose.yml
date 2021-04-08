@@ -5,7 +5,7 @@ services:
     build:
       context: ./node
     container_name: appnode
-    entrypoint: dockerize -wait tcp://mysqldb:3306 -timeout 30s node index.js
+    entrypoint: dockerize -wait tcp://mysqldb:3306 -timeout 50s node index.js
     networks:
       - node-network
     tty: true
@@ -15,14 +15,14 @@ services:
       - mysqldb
 
   mysqldb:
-    image: mysql:5.7
-    command: --init-file /data/application/init.sql
+    image: mysql:5.6
+    command: --innodb-use-native-aio=0
     container_name: mysqldb
     restart: always
     tty: true
     volumes:
       - ./mysql:/var/lib/mysql
-      - ./init.sql:/data/application/init.sql
+      - ./mysql:/docker-entrypoint-initdb.d
     environment:
       - MYSQL_DATABASE=nodedb
       - MYSQL_ROOT_PASSWORD=root
@@ -44,7 +44,7 @@ services:
     networks:
       - node-network
     ports:
-      - "80:80"
+      - "8080:80"
 
 networks:
   node-network:
